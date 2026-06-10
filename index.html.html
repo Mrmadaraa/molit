@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Молитвенный помощник | VK Mini App</title>
+    <!-- Подключение VK Bridge для возможной интеграции (опционально) -->
+    <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
+    <script type="text/javascript">
+        VK.init({apiId: 0});
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f7f9fc;
+            color: #1e293b;
+            padding: 20px 16px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* карточки и блоки */
+        .card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 24px;
+            transition: all 0.2s;
+        }
+
+        .quote-card {
+            background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+            border-left: 6px solid #f0df49;
+        }
+
+        .quote-text {
+            font-size: 1.05rem;
+            line-height: 1.45;
+            font-style: italic;
+            color: #2d3a5e;
+            font-weight: 500;
+        }
+
+        .quote-author {
+            margin-top: 12px;
+            text-align: right;
+            font-size: 0.85rem;
+            color: #6c7283;
+            font-weight: 500;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1e293b;
+            border-left: 4px solid #f0df49;
+            padding-left: 12px;
+        }
+
+        .time-settings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+
+        .time-item {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .time-item label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+
+        .time-input {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 1rem;
+            width: 100%;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        button {
+            background: #f0df49;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        button:active {
+            transform: scale(0.96);
+            background: #7c3aed;
+        }
+
+        .secondary-btn {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .danger-btn {
+            background: #fee2e2;
+            color: #b91c1c;
+            box-shadow: none;
+        }
+
+        .reminder-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .reminder-item {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #eef2ff;
+        }
+
+        .reminder-info {
+            flex: 3;
+        }
+
+        .reminder-time {
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: monospace;
+            background: #e9eef3;
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 50px;
+            margin-bottom: 6px;
+        }
+
+        .reminder-text {
+            font-size: 0.95rem;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 0;
+        }
+
+        .add-form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .add-form input, .add-form textarea {
+            flex: 2;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 28px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .add-form textarea {
+            min-width: 100%;
+            resize: vertical;
+        }
+
+        .notification-permission {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            background: #e9eef3;
+            padding: 4px 10px;
+            border-radius: 40px;
+            color: #334155;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        hr {
+            margin: 16px 0;
+            border: none;
+            height: 1px;
+            background: #eef2ff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="notification-permission">
+    <button id="enableNotificationsBtn" class="secondary-btn" style="background:#eef2ff;">🔔 Разрешить уведомления</button>
+</div>
+
+<div class="card quote-card" id="quoteContainer">
+    <div class="quote-text" id="quoteText">«Без Бога ни до порога. Помните: молитва — дыхание души.»</div>
+    <div class="quote-author">— прп. Иоанн Крестьянкин</div>
+</div>
+
+<!-- Утренние / Вечерние молитвы -->
+<div class="card">
+    <h2>🕯️ Ежедневные молитвы</h2>
+    <div class="time-settings">
+        <div class="time-item">
+            <label>🌅 Утренняя молитва (время)</label>
+            <input type="time" id="morningTime" class="time-input" value="07:00">
+        </div>
+        <div class="time-item">
+            <label>🌙 Вечерняя молитва (время)</label>
+            <input type="time" id="eveningTime" class="time-input" value="20:00">
+        </div>
+    </div>
+    <button id="saveDailyTimesBtn"> Сохранить время молитв</button>
+    <div class="badge" style="margin-top: 12px; display: inline-block;">Уведомления приходят каждый день в указанное время</div>
+</div>
+
+<!-- Пользовательские напоминания (дневные просьбы) -->
+<div class="card">
+    <h2> Дневные молитвенные просьбы</h2>
+    <p style="font-size: 0.85rem; color: #475569; margin-bottom: 12px;">Добавьте личные напоминания — о здравии, о путешествующих, благодарственные и любые молитвы по вашему прошению.</p>
+    
+    <div class="add-form">
+        <div class="add-form-row">
+            <input type="time" id="customTime" value="12:00" style="flex:0.6;">
+            <input type="text" id="customText" placeholder="О ком или о чём молиться? (например: о здравии мамы)" style="flex:2;">
+        </div>
+        <button id="addReminderBtn"> Добавить напоминание</button>
+    </div>
+    
+    <div id="customRemindersList" class="reminder-list">
+        <!-- динамический список пользовательских напоминаний -->
+        <div class="badge" style="text-align: center;">Загружаем ваши личные молитвы...</div>
+    </div>
+</div>
+
+<footer>
+    🙏 Напоминания работают даже когда приложение свёрнуто, если дано разрешение на уведомления
+</footer>
+
+<script>
+    // ----------------------------- ЦИТАТЫ ИОАННА КРЕСТЬЯНКИНА -----------------------------
+    const quotes = [
+        "«Господь никогда не оставляет человека. Он всегда рядом, только человек часто закрывает глаза свои и не видит Его.»",
+        "«Молитва — это не количество слов, а глубина сердца. Господь слышит тихий вздох кающегося.»",
+        "«Не отчаивайся, даже если падаешь каждый день. Встань и иди ко Господу с покаянием.»",
+        "«Благодарите Бога за всё: за радость и за скорбь — всё ведёт ко спасению.»",
+        "«Утренняя молитва даёт крылья душе на весь день. Не пренебрегай ею.»",
+        "«Вечером, прежде чем уснуть, прости всех от всего сердца, и Господь пошлёт мир твоей душе.»",
+        "«Помните: главное — не просто прочитать правило, а чтобы сердце согрелось любовью к Богу.»",
+        "«Молитва за ближних — это великое дело милосердия. Господь внемлет ей особенно.»",
+        "«Жизнь без молитвы — как корабль без руля. Волны бросают его, а он гибнет.»",
+        "«Призывай Имя Божие часто, и увидишь, как уходят уныние и пустота.»"
+    ];
+
+    // ----------------------------- ХРАНИЛИЩЕ -----------------------------
+    let morningReminderTime = "07:00";
+    let eveningReminderTime = "20:00";
+    let customReminders = [];   // каждый элемент: { id, time, text }
+
+    // Храним дату последнего отправленного уведомления (чтобы не дублировать в один день)
+    let lastSentMap = {
+        morning: "",
+        evening: "",
+        // для custom будем хранить по id: "custom_<id>": "YYYY-MM-DD"
+    };
+
+    let notificationPermissionGranted = false;
+    let checkInterval = null;
+
+    // ----------------------------- ЗАГРУЗКА И СОХРАНЕНИЕ В LOCALSTORAGE -----------------------------
+    function loadData() {
+        const storedMorning = localStorage.getItem("prayer_morning_time");
+        const storedEvening = localStorage.getItem("prayer_evening_time");
+        if (storedMorning) morningReminderTime = storedMorning;
+        if (storedEvening) eveningReminderTime = storedEvening;
+        
+        const storedCustom = localStorage.getItem("prayer_custom_reminders");
+        if (storedCustom) {
+            try {
+                customReminders = JSON.parse(storedCustom);
+            } catch(e) { customReminders = []; }
+        }
+        
+        const storedLastSent = localStorage.getItem("prayer_last_sent_map");
+        if (storedLastSent) {
+            try {
+                lastSentMap = JSON.parse(storedLastSent);
+            } catch(e) { lastSentMap = { morning: "", evening: "" }; }
+        } else {
+            lastSentMap = { morning: "", evening: "" };
+        }
+        
+        // синхронизация custom lastSent (если старые записи)
+        if (!lastSentMap.custom) lastSentMap.custom = {};
+        if (typeof lastSentMap.custom !== "object") lastSentMap.custom = {};
+        
+        // отображаем в UI
+        document.getElementById("morningTime").value = morningReminderTime;
+        document.getElementById("eveningTime").value = eveningReminderTime;
+        renderCustomReminders();
+    }
+
+    function saveAll() {
+        localStorage.setItem("prayer_morning_time", morningReminderTime);
+        localStorage.setItem("prayer_evening_time", eveningReminderTime);
+        localStorage.setItem("prayer_custom_reminders", JSON.stringify(customReminders));
+        localStorage.setItem("prayer_last_sent_map", JSON.stringify(lastSentMap));
+    }
+
+    // ----------------------------- ОТОБРАЖЕНИЕ ПОЛЬЗОВАТЕЛЬСКИХ НАПОМИНАНИЙ -----------------------------
+    function renderCustomReminders() {
+        const container = document.getElementById("customRemindersList");
+        if (!container) return;
+        if (customReminders.length === 0) {
+            container.innerHTML = `<div class="badge" style="text-align:center; padding:20px;">✨ Нет добавленных молитв. Создайте напоминание о дневной молитве.</div>`;
+            return;
+        }
+        container.innerHTML = "";
+        customReminders.forEach(rem => {
+            const div = document.createElement("div");
+            div.className = "reminder-item";
+            div.innerHTML = `
+                <div class="reminder-info">
+                    <div class="reminder-time">🕊️ ${rem.time}</div>
+                    <div class="reminder-text">${escapeHtml(rem.text)}</div>
+                </div>
+                <button class="danger-btn delete-reminder" data-id="${rem.id}" style="background:#ffe4e4; padding:8px 16px;">🗑️ Удалить</button>
+            `;
+            container.appendChild(div);
+        });
+        // навесить обработчики на кнопки удаления
+        document.querySelectorAll(".delete-reminder").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const id = parseInt(btn.getAttribute("data-id"));
+                deleteCustomReminder(id);
+            });
+        });
+    }
+
+    function deleteCustomReminder(id) {
+        customReminders = customReminders.filter(r => r.id !== id);
+        // удаляем запись lastSent для этого напоминания
+        if (lastSentMap.custom && lastSentMap.custom[`custom_${id}`]) {
+            delete lastSentMap.custom[`custom_${id}`];
+        }
+        saveAll();
+        renderCustomReminders();
+        showLocalNotification("📖 Молитвенная просьба удалена", `Напоминание убрано. Вы можете добавить новое.`);
+    }
+
+    function addCustomReminder(time, text) {
+        if (!time || !text.trim()) {
+            showLocalNotification("⚠️ Необходимо указать время и описание", "Добавьте содержание молитвы.");
+            return false;
+        }
+        const newId = Date.now();
+        customReminders.push({
+            id: newId,
+            time: time,
+            text: text.trim()
+        });
+        // сбрасываем lastSent для нового напоминания (чтобы сегодня могло сработать, если время ещё не прошло)
+        if (!lastSentMap.custom) lastSentMap.custom = {};
+        lastSentMap.custom[`custom_${newId}`] = "";
+        saveAll();
+        renderCustomReminders();
+        showLocalNotification("✅ Напоминание добавлено", `В ${time} вы получите напоминание: "${text}"`);
+        return true;
+    }
+
+    // ----------------------------- УВЕДОМЛЕНИЯ (NOTIFICATION API) -----------------------------
+    function requestNotificationPermission() {
+        if (!("Notification" in window)) {
+            alert("Ваш браузер не поддерживает уведомления. Напоминания будут отображаться только внутри приложения.");
+            return;
+        }
+        if (Notification.permission === "granted") {
+            notificationPermissionGranted = true;
+            showLocalNotification("🔔 Уведомления включены", "Молитвенный помощник будет напоминать о молитвах вовремя.");
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(perm => {
+                if (perm === "granted") {
+                    notificationPermissionGranted = true;
+                    showLocalNotification("✅ Готово!", "Теперь вы будете получать молитвенные напоминания.");
+                } else {
+                    notificationPermissionGranted = false;
+                    alert("Разрешите уведомления в браузере, чтобы получать напоминания даже когда приложение не в фокусе.");
+                }
+            });
+        } else {
+            alert("Уведомления заблокированы браузером. Разрешите в настройках сайта для получения напоминаний.");
+        }
+    }
+
+    function showLocalNotification(title, body) {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "granted") {
+            // Показываем уведомление (даже если вкладка не активна — браузер покажет)
+            new Notification(title, { body: body, icon: "https://vk.com/images/emoji/D83DDE4F.png", silent: false });
+        } else {
+            // fallback в консоль и alert только если приложение активно
+            console.log(`🔔 ${title}: ${body}`);
+            // можно также добавить визуальный тост, но для VK желательно не злоупотреблять alert
+        }
+    }
+
+    // Внутренняя проверка и отправка уведомлений
+    function checkAndSendReminders() {
+        const now = new Date();
+        const currentHour = now.getHours().toString().padStart(2,'0');
+        const currentMin = now.getMinutes().toString().padStart(2,'0');
+        const currentTime = `${currentHour}:${currentMin}`;
+        const todayStr = now.toISOString().slice(0,10);
+        
+        // 1) Утренняя молитва
+        if (morningReminderTime === currentTime) {
+            if (lastSentMap.morning !== todayStr) {
+                lastSentMap.morning = todayStr;
+                saveAll();
+                showLocalNotification("🌅 Утренняя молитва", "Настало время утреннего молитвенного правила. «В начале дня прославь Господа!»");
+            }
+        }
+        
+        // 2) Вечерняя молитва
+        if (eveningReminderTime === currentTime) {
+            if (lastSentMap.evening !== todayStr) {
+                lastSentMap.evening = todayStr;
+                saveAll();
+                showLocalNotification("🌙 Вечерняя молитва", "Вечернее правило: поблагодарите Бога за прошедший день и испросите мира на ночь.");
+            }
+        }
+        
+        // 3) Пользовательские напоминания (дневные молитвы по просьбе)
+        for (let rem of customReminders) {
+            if (rem.time === currentTime) {
+                const key = `custom_${rem.id}`;
+                const lastDate = lastSentMap.custom?.[key] || "";
+                if (lastDate !== todayStr) {
+                    if (!lastSentMap.custom) lastSentMap.custom = {};
+                    lastSentMap.custom[key] = todayStr;
+                    saveAll();
+                    showLocalNotification("🕯️ Молитва по вашему прошению", `${rem.text} — время молитвы (${rem.time}). Помяните в своих молитвах!`);
+                }
+            }
+        }
+    }
+
+    // ----------------------------- ИНИЦИАЛИЗАЦИЯ ТАЙМЕРА И НАБЛЮДЕНИЕ -----------------------------
+    function startReminderScheduler() {
+        if (checkInterval) clearInterval(checkInterval);
+        // проверяем каждые 30 секунд, чтобы точно поймать минуту
+        checkInterval = setInterval(() => {
+            checkAndSendReminders();
+        }, 30000);
+        // дополнительно запустим сразу одну проверку на старте (если вдруг уже время подошло)
+        setTimeout(() => checkAndSendReminders(), 500);
+    }
+
+    // Обновление времени утренней/вечерней молитвы
+    function updateDailyTimes() {
+        const newMorning = document.getElementById("morningTime").value;
+        const newEvening = document.getElementById("eveningTime").value;
+        if (newMorning) morningReminderTime = newMorning;
+        if (newEvening) eveningReminderTime = newEvening;
+        // сбрасываем флаги отправки на сегодня, чтобы сегодня же новое время сработало (если ещё не было отправлено)
+        const todayStr = new Date().toISOString().slice(0,10);
+        if (lastSentMap.morning === todayStr && morningReminderTime !== document.getElementById("morningTime").defaultValue) {
+            // можно оставить, но для правильной работы разрешим отправить повторно если пользователь поменял
+            lastSentMap.morning = ""; 
+        }
+        if (lastSentMap.evening === todayStr && eveningReminderTime !== document.getElementById("eveningTime").defaultValue) {
+            lastSentMap.evening = "";
+        }
+        saveAll();
+        showLocalNotification("🕰️ Время молитв обновлено", `Утренняя: ${morningReminderTime}, Вечерняя: ${eveningReminderTime}`);
+        // принудительная проверка
+        checkAndSendReminders();
+    }
+    
+    // helper для защиты от XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    // Случайная цитата при загрузке и открытии
+    function showRandomQuote() {
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        const quoteTextElem = document.getElementById("quoteText");
+        if (quoteTextElem) {
+            quoteTextElem.innerHTML = `❝ ${quotes[randomIndex]} ❞`;
+        }
+    }
+    
+    // Проверка доступности уведомлений при старте
+    function checkInitialNotificationStatus() {
+        if ("Notification" in window && Notification.permission === "granted") {
+            notificationPermissionGranted = true;
+        } else {
+            notificationPermissionGranted = false;
+        }
+    }
+    
+    // Демо-уведомление при открытии (не навязчиво)
+    function welcomeNotification() {
+        setTimeout(() => {
+            if (Notification.permission === "granted") {
+                showLocalNotification("🙏 Молитвенный помощник активен", "Я буду напоминать об утренних, вечерних и ваших личных молитвах.");
+            }
+        }, 1000);
+    }
+    
+    // Обработчики событий UI
+    function bindUI() {
+        document.getElementById("saveDailyTimesBtn").addEventListener("click", () => {
+            updateDailyTimes();
+        });
+        document.getElementById("addReminderBtn").addEventListener("click", () => {
+            const timeVal = document.getElementById("customTime").value;
+            const textVal = document.getElementById("customText").value.trim();
+            if (!timeVal) {
+                showLocalNotification("Время не выбрано", "Укажите час молитвы");
+                return;
+            }
+            if (textVal === "") {
+                showLocalNotification("Опишите молитвенное прошение", "Например: «о здравии бабушки» или «благодарение за урожай»");
+                return;
+            }
+            addCustomReminder(timeVal, textVal);
+            document.getElementById("customText").value = ""; // очищаем поле, время оставляем для удобства
+        });
+        document.getElementById("enableNotificationsBtn").addEventListener("click", () => {
+            requestNotificationPermission();
+        });
+        
+        // синхронизация полей времени с переменными при ручном изменении напрямую (без сохранения но показ)
+        document.getElementById("morningTime").addEventListener("change", function() {
+            // не сохраняем автоматически, только по кнопке
+        });
+        document.getElementById("eveningTime").addEventListener("change", function() {});
+    }
+    
+    // Обработка события видимости (когда вкладка становится активной - тоже проверить)
+    function handleVisibilityChange() {
+        if (!document.hidden) {
+            checkAndSendReminders(); // доп. проверка при возвращении в приложение
+        }
+    }
+    
+    // ----------------------------- ЗАПУСК ПРИЛОЖЕНИЯ -----------------------------
+    function init() {
+        loadData();
+        showRandomQuote();
+        checkInitialNotificationStatus();
+        bindUI();
+        startReminderScheduler();
+        welcomeNotification();
+        
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        
+        // если есть поддержка service worker для фоновых уведомлений не требуется, Notification API работает в фоне.
+        // дополнительно: при повторном открытии страницы — новая цитата (по условию)
+        // Также предусмотрим сохранение напоминаний при закрытии вкладки - уже есть saveAll на каждое действие.
+        window.addEventListener("beforeunload", () => {
+            saveAll();
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>
